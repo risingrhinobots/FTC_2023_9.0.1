@@ -161,8 +161,8 @@ public class Auto_Blueleft extends LinearOpMode {
          * Wait for the user to press start on the Driver Station
          */
         waitForStart();
-        //  pipeline = new DuckPositionDetermination();
-        while (opModeIsActive()) {
+
+        while (opModeIsActive() && !targetFound){
             /*
              * Send some stats to the telemetry
              */
@@ -175,30 +175,63 @@ public class Auto_Blueleft extends LinearOpMode {
 
             telemetry.addData("Analysis", pipeline.getAnalysis());
             telemetry.update();
+
             
             encoderDriveInLine(0.3,24,-24,-24,24,2);
             //Drive forward to align with the alliance hub before turning
             encoderDriveInLine(0.3,40,40,40,40,2);
 
-         //   initAprilTag();
+
             if (pipeline.position == DuckPosDeterminationPipeline.DuckPosition.LEFT){
                 DESIRED_TAG_ID = 1;
-                encoderDriveInLine(0.3,5,-5,-5,5,2);
-           //     telemetryAprilTag();
-
-              }
+               }
             else if (pipeline.position == DuckPosDeterminationPipeline.DuckPosition.CENTER){
                 DESIRED_TAG_ID = 2;
-                encoderDriveInLine(0.3,5,-5,-5,5,2);
-           //     telemetryAprilTag();
-
-              }
+               }
             else if (pipeline.position == DuckPosDeterminationPipeline.DuckPosition.RIGHT){
                 DESIRED_TAG_ID = 3;
-                encoderDriveInLine(0.3,5,-5,-5,5,2);
-             //   telemetryAprilTag();
-
              }
+            webcam.stopStreaming();
+            initAprilTag();
+            // Step through the list of detected tags and look for a matching tag
+            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+            for (AprilTagDetection detection : currentDetections) {
+                // Look to see if we have size info on this tag.
+                if (detection.metadata != null) {
+                    //  Check to see if we want to track towards this tag.
+                    if ((DESIRED_TAG_ID < 0) || (detection.id == DESIRED_TAG_ID)) {
+                        // Yes, we want to use this tag.
+                        targetFound = true;
+                        desiredTag = detection;
+                        telemetry.addData("Found", "Tag ID %d is found", detection.id);
+                        break;  // don't look any further.
+
+                    } else {
+                        // This tag is in the library, but we do not want to track it right now.
+                        telemetry.addData("Skipping", "Tag ID %d is not desired", detection.id);
+                    }
+                } else {
+                    // This tag is NOT in the library, so we don't have enough information to track to it.
+                    telemetry.addData("Unknown", "Tag ID %d is not in TagLibrary", detection.id);
+                }
+            }
+            telemetry.update();
+
+            // Tell the driver what we see, and what to do.
+            if (targetFound) {
+                telemetry.addData("\n>","HOLD Left-Bumper to Drive to Target\n");
+                telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
+                telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
+                telemetry.addData("Bearing","%3.0f degrees", desiredTag.ftcPose.bearing);
+                telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
+            } else {
+                telemetry.addData("\n>","Drive using Encoder Drive\n");
+            }
+            telemetry.update();
+            encoderDriveInLine(0.2,1,-1,-1,1,2);
+            sleep(100);
+
+
         }
 
 
@@ -206,7 +239,6 @@ public class Auto_Blueleft extends LinearOpMode {
 
 
     public static class DuckPosDeterminationPipeline extends OpenCvPipeline
-
     {
         /*
          * An enum to define the freight position

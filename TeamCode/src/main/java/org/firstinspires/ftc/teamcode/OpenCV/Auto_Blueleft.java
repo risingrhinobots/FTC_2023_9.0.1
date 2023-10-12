@@ -72,6 +72,7 @@ public class Auto_Blueleft extends LinearOpMode {
      * The variable to store our instance of the AprilTag processor.
      */
     private AprilTagProcessor aprilTag;
+    private boolean startAprilTagCamera = false;
 
     /**
      * The variable to store our instance of the vision portal.
@@ -162,6 +163,7 @@ public class Auto_Blueleft extends LinearOpMode {
          */
         waitForStart();
 
+
         while (opModeIsActive() && !targetFound){
             /*
              * Send some stats to the telemetry
@@ -175,12 +177,15 @@ public class Auto_Blueleft extends LinearOpMode {
 
             telemetry.addData("Analysis", pipeline.getAnalysis());
             telemetry.update();
+            if (!startAprilTagCamera){
+                initAprilTag();
+                startAprilTagCamera = true;
+            }
 
             
-            encoderDriveInLine(0.3,24,-24,-24,24,2);
+      //      encoderDriveInLine(0.3,24,-24,-24,24,2);
             //Drive forward to align with the alliance hub before turning
-            encoderDriveInLine(0.3,40,40,40,40,2);
-
+     //       encoderDriveInLine(0.3,40,40,40,40,2);
 
             if (pipeline.position == DuckPosDeterminationPipeline.DuckPosition.LEFT){
                 DESIRED_TAG_ID = 1;
@@ -192,7 +197,8 @@ public class Auto_Blueleft extends LinearOpMode {
                 DESIRED_TAG_ID = 3;
              }
             webcam.stopStreaming();
-            initAprilTag();
+            DESIRED_TAG_ID = 3;
+
             // Step through the list of detected tags and look for a matching tag
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
@@ -224,11 +230,12 @@ public class Auto_Blueleft extends LinearOpMode {
                 telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
                 telemetry.addData("Bearing","%3.0f degrees", desiredTag.ftcPose.bearing);
                 telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
+                break;
             } else {
                 telemetry.addData("\n>","Drive using Encoder Drive\n");
             }
             telemetry.update();
-            encoderDriveInLine(0.2,1,-1,-1,1,2);
+            encoderDriveInLine(0.2,0.5,-0.5,-0.5,0.5,2);
             sleep(100);
 
 
@@ -333,7 +340,7 @@ public class Auto_Blueleft extends LinearOpMode {
         /*
          * This function takes the RGB frame, converts to YCrCb,
          * and extracts the Cb channel to the 'Cb' variable
-         */
+         `*/
         void inputToCb(Mat input)
         {
             Imgproc.cvtColor(input, YCrCb, Imgproc.COLOR_RGB2YCrCb);

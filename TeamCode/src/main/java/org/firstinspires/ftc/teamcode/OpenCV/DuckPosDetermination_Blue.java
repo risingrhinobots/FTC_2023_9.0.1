@@ -129,6 +129,7 @@ public class DuckPosDetermination_Blue extends LinearOpMode {
 
             telemetry.addData("Analysis", pipeline.getAnalysis());
             telemetry.update();
+            webcam.stopStreaming();
 
 
 
